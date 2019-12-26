@@ -2,16 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import * as serviceWorker from './serviceWorker';
 import ApolloClient from 'apollo-boost';
-import {
-    ApolloProvider
-} from 'react-apollo';
-
-import './index.css';
+import { ApolloProvider } from 'react-apollo';
 import RouterContainer from './route';
-
-import Edit from './components/Edit';
-import Create from './components/Create';
-import Show from './components/Show';
+import './index.css';
 
 const client = new ApolloClient({
     uri: 'http://localhost:3000/graphql',
