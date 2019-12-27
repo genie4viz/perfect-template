@@ -1,380 +1,235 @@
-import React, {useRef, useState} from 'react';
+import React, { useRef, useState } from "react";
 import gql from "graphql-tag";
 import { Mutation } from "react-apollo";
 // import { Link } from 'react-router-dom';
-import { makeStyles } from '@material-ui/core/styles';
-import Container from '@material-ui/core/Container';
-import AppBar from '@material-ui/core/AppBar';
-import Fab from '@material-ui/core/Fab';
-import KeyboardReturnIcon from '@material-ui/icons/KeyboardReturn';
-import { Form, Field } from 'react-final-form';
-import { TextField, Checkbox, Radio, Select } from 'final-form-material-ui';
-import {  
+import { makeStyles } from "@material-ui/core/styles";
+import Container from "@material-ui/core/Container";
+import AppBar from "@material-ui/core/AppBar";
+import Fab from "@material-ui/core/Fab";
+import KeyboardReturnIcon from "@material-ui/icons/KeyboardReturn";
+import { Form, Field } from "react-final-form";
+import { TextField } from "final-form-material-ui";
+
+import {
   Paper,
   Link,
   Grid,
   Button,  
-  RadioGroup,
-  FormLabel,
-  MenuItem,
-  FormGroup,
-  FormControl,
-  FormControlLabel,
-} from '@material-ui/core';
+} from "@material-ui/core";
 // Picker
-import DateFnsUtils from '@date-io/date-fns';
+import DateFnsUtils from "@date-io/date-fns";
 import {
-  MuiPickersUtilsProvider,
-  TimePicker,
-  DatePicker,
-} from '@material-ui/pickers';
+  MuiPickersUtilsProvider,  
+  DatePicker
+} from "@material-ui/pickers";
 
 const ADD_BOOK = gql`
-    mutation AddBook(
-        $isbn: String!,
-        $title: String!,
-        $author: String!,
-        $description: String!,
-        $publisher: String!,
-        $published_year: Int!) {
-        addBook(
-            isbn: $isbn,
-            title: $title,
-            author: $author,
-            description: $description,
-            publisher: $publisher,
-            published_year: $published_year) {
-            _id
-        }
+  mutation AddBook(
+    $isbn: String!
+    $title: String!
+    $author: String!
+    $description: String!
+    $publisher: String!
+    $published_year: Int!
+  ) {
+    addBook(
+      isbn: $isbn
+      title: $title
+      author: $author
+      description: $description
+      publisher: $publisher
+      published_year: $published_year
+    ) {
+      _id
     }
+  }
 `;
 
 function DatePickerWrapper(props) {
-    const {
-      input: { name, onChange, value, ...restInput },
-      meta,
-      ...rest
-    } = props;
-    const showError =
-      ((meta.submitError && !meta.dirtySinceLastSubmit) || meta.error) &&
-      meta.touched;
-  
-    return (
-      <DatePicker
-        {...rest}
-        name={name}
-        helperText={showError ? meta.error || meta.submitError : undefined}
-        error={showError}
-        inputProps={restInput}
-        onChange={onChange}
-        value={value === '' ? null : value}
-      />
-    );
-  }
-  
-  function TimePickerWrapper(props) {
-    const {
-      input: { name, onChange, value, ...restInput },
-      meta,
-      ...rest
-    } = props;
-    const showError =
-      ((meta.submitError && !meta.dirtySinceLastSubmit) || meta.error) &&
-      meta.touched;
-  
-    return (
-      <TimePicker
-        {...rest}
-        name={name}
-        helperText={showError ? meta.error || meta.submitError : undefined}
-        error={showError}
-        inputProps={restInput}
-        onChange={onChange}
-        value={value === '' ? null : value}
-      />
-    );
-  }
-  
+  const {
+    input: { name, onChange, value, ...restInput },
+    meta,
+    ...rest
+  } = props;
+  const showError =
+    ((meta.submitError && !meta.dirtySinceLastSubmit) || meta.error) &&
+    meta.touched;
+
+  return (
+    <DatePicker
+      {...rest}
+      name={name}
+      helperText={showError ? meta.error || meta.submitError : undefined}
+      error={showError}
+      inputProps={restInput}
+      onChange={onChange}
+      value={value === "" ? null : value}
+    />
+  );
+}
+
 const onSubmit = async values => {
-    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-    await sleep(300);
-    window.alert(JSON.stringify(values, 0, 2));
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  await sleep(300);
+  window.alert(JSON.stringify(values, 0, 2));
 };
 const validate = values => {
-    const errors = {};
-    if (!values.firstName) {
-        errors.firstName = 'Required';
-    }
-    if (!values.lastName) {
-        errors.lastName = 'Required';
-    }
-    if (!values.email) {
-        errors.email = 'Required';
-    }
-    return errors;
+  const errors = {};
+  if (!values.firstName) {
+    errors.firstName = "Required";
+  }
+  if (!values.lastName) {
+    errors.lastName = "Required";
+  }
+  if (!values.email) {
+    errors.email = "Required";
+  }
+  return errors;
 };
 
 const useStyles = makeStyles(theme => ({
-    form: {
-        margin: theme.spacing(2)        
-    },
-    formElement: {
-        width: '100%',
-        margin: theme.spacing(1)
-    },
-    container: {
-        padding: theme.spacing(2),
-        textAlign: 'center',
-        color: theme.palette.text.secondary,
-    },
-    paper: {
-        padding: theme.spacing(2),        
-        color: theme.palette.text.secondary,
-    },
-    iconButton: {
-        margin: theme.spacing(2)
-    }
+  form: {
+    margin: theme.spacing(2)
+  },
+  formElement: {
+    width: "100%",
+    margin: theme.spacing(1)
+  },
+  container: {
+    padding: theme.spacing(2),
+    textAlign: "center",
+    color: theme.palette.text.secondary
+  },
+  paper: {
+    padding: theme.spacing(2),
+    color: theme.palette.text.secondary
+  },
+  iconButton: {
+    margin: theme.spacing(2)
+  }
 }));
 
-export default function AddBook(props){    
-    
-    const isbnRef = useRef();
-    const titleRef = useRef();
-    const authorRef= useRef();
-    const descriptionRef = useRef();
-    const pubyearRef = useRef();
-    const publisherRef = useRef();
+export default function AddBook(props) {
+  const classes = useStyles();
 
-    const classes = useStyles();
-
-    return (
-        <Mutation mutation={ADD_BOOK} onCompleted={() => props.history.push('/')}>
-            {(addBook, { loading, error }) => (
-                <Container maxWidth="lg" className={classes.container}>
-                    <AppBar position="static">
-                    <h3>ADD BOOK</h3>
-                    <Link to="/">
-                        <Fab color="secondary" aria-label="return" className={classes.iconButton}>
-                            <KeyboardReturnIcon />
-                        </Fab>
-                    </Link>
-                    </AppBar>
-                    <Paper className={classes.paper}>
-                        <Form
-                            onSubmit={onSubmit}
-                            initialValues={{ employed: true, stooge: 'larry' }}
-                            validate={validate}
-                            render={({ handleSubmit, reset, submitting, pristine, values }) => (
-                            <form onSubmit={handleSubmit} noValidate>
-                                <Paper style={{ padding: 16 }}>
-                                <Grid container alignItems="flex-start" spacing={2}>
-                                    <Grid item xs={6}>
-                                        <Field
-                                            fullWidth
-                                            required
-                                            name="firstName"
-                                            component={TextField}
-                                            type="text"
-                                            label="First Name"
-                                        />
-                                    </Grid>
-                                    <Grid item xs={6}>
-                                        <Field
-                                            fullWidth
-                                            required
-                                            name="lastName"
-                                            component={TextField}
-                                            type="text"
-                                            label="Last Name"
-                                        />
-                                    </Grid>
-                                    <Grid item xs={12}>
-                                        <Field
-                                            name="email"
-                                            fullWidth
-                                            required
-                                            component={TextField}
-                                            type="email"
-                                            label="Email"
-                                        />
-                                    </Grid>
-                                    <Grid item xs={12}>
-                                        <FormControlLabel
-                                            label="Employed"
-                                            control={
-                                            <Field
-                                                name="employed"
-                                                component={Checkbox}
-                                                type="checkbox"
-                                            />
-                                            }
-                                        />
-                                    </Grid>
-                                    <Grid item>
-                                        <FormControl component="fieldset">
-                                            <FormLabel component="legend">Best Stooge</FormLabel>
-                                            <RadioGroup row>
-                                            <FormControlLabel
-                                                label="Larry"
-                                                control={
-                                                <Field
-                                                    name="stooge"
-                                                    component={Radio}
-                                                    type="radio"
-                                                    value="larry"
-                                                />
-                                                }
-                                            />
-                                            <FormControlLabel
-                                                label="Moe"
-                                                control={
-                                                <Field
-                                                    name="stooge"
-                                                    component={Radio}
-                                                    type="radio"
-                                                    value="moe"
-                                                />
-                                                }
-                                            />
-                                            <FormControlLabel
-                                                label="Curly"
-                                                control={
-                                                <Field
-                                                    name="stooge"
-                                                    component={Radio}
-                                                    type="radio"
-                                                    value="curly"
-                                                />
-                                                }
-                                            />
-                                            </RadioGroup>
-                                        </FormControl>
-                                    </Grid>
-                                    <Grid item>
-                                        <FormControl component="fieldset">
-                                            <FormLabel component="legend">Sauces</FormLabel>
-                                            <FormGroup row>
-                                            <FormControlLabel
-                                                label="Ketchup"
-                                                control={
-                                                <Field
-                                                    name="sauces"
-                                                    component={Checkbox}
-                                                    type="checkbox"
-                                                    value="ketchup"
-                                                />
-                                                }
-                                            />
-                                            <FormControlLabel
-                                                label="Mustard"
-                                                control={
-                                                <Field
-                                                    name="sauces"
-                                                    component={Checkbox}
-                                                    type="checkbox"
-                                                    value="mustard"
-                                                />
-                                                }
-                                            />
-                                            <FormControlLabel
-                                                label="Salsa"
-                                                control={
-                                                <Field
-                                                    name="sauces"
-                                                    component={Checkbox}
-                                                    type="checkbox"
-                                                    value="salsa"
-                                                />
-                                                }
-                                            />
-                                            <FormControlLabel
-                                                label="Guacamole 🥑"
-                                                control={
-                                                <Field
-                                                    name="sauces"
-                                                    component={Checkbox}
-                                                    type="checkbox"
-                                                    value="guacamole"
-                                                />
-                                                }
-                                            />
-                                            </FormGroup>
-                                        </FormControl>
-                                    </Grid>
-                                    <Grid item xs={12}>
-                                        <Field
-                                            fullWidth
-                                            name="notes"
-                                            component={TextField}
-                                            multiline
-                                            label="Notes"
-                                        />
-                                    </Grid>
-                                    <Grid item xs={12}>
-                                        <Field
-                                            fullWidth
-                                            name="city"
-                                            component={Select}
-                                            label="Select a City"
-                                            formControlProps={{ fullWidth: true }}
-                                        >
-                                            <MenuItem value="London">London</MenuItem>
-                                            <MenuItem value="Paris">Paris</MenuItem>
-                                            <MenuItem value="Budapest">
-                                            A city with a very long Name
-                                            </MenuItem>
-                                        </Field>
-                                    </Grid>
-                                    <MuiPickersUtilsProvider utils={DateFnsUtils}>
-                                        <Grid item xs={6}>
-                                            <Field
-                                            name="rendez-vous"
-                                            component={DatePickerWrapper}
-                                            fullWidth
-                                            margin="normal"
-                                            label="Rendez-vous"
-                                            />
-                                        </Grid>
-                                        <Grid item xs={6}>
-                                            <Field
-                                            name="alarm"
-                                            component={TimePickerWrapper}
-                                            fullWidth
-                                            margin="normal"
-                                            label="Alarm"
-                                            />
-                                        </Grid>
-                                    </MuiPickersUtilsProvider>
-                                    <Grid item style={{ marginTop: 16 }}>
-                                        <Button
-                                            type="button"
-                                            variant="contained"
-                                            onClick={reset}
-                                            disabled={submitting || pristine}
-                                        >
-                                            Reset
-                                        </Button>
-                                    </Grid>
-                                    <Grid item style={{ marginTop: 16 }}>
-                                        <Button
-                                            variant="contained"
-                                            color="primary"
-                                            type="submit"
-                                            disabled={submitting}
-                                        >
-                                            Submit
-                                        </Button>
-                                    </Grid>
-                                </Grid>
-                                </Paper>
-                                <pre>{JSON.stringify(values, 0, 2)}</pre>
-                            </form>
-                            )}
+  return (
+    <Mutation mutation={ADD_BOOK} onCompleted={() => props.history.push("/")}>
+      {(addBook, { loading, error }) => (
+        <Container maxWidth="lg" className={classes.container}>
+          <AppBar position="static">
+            <h3>ADD BOOK</h3>
+            <Link to="/">
+              <Fab
+                color="secondary"
+                aria-label="return"
+                className={classes.iconButton}
+              >
+                <KeyboardReturnIcon />
+              </Fab>
+            </Link>
+          </AppBar>
+          <Paper className={classes.paper}>
+            <Form
+              onSubmit={onSubmit}
+              initialValues={{ }}
+              validate={validate}
+              render={({
+                handleSubmit,
+                reset,
+                submitting                
+              }) => (
+                <form onSubmit={handleSubmit} noValidate>
+                  <Paper style={{ padding: 16 }}>
+                    <Grid container alignItems="flex-start" spacing={2}>
+                      <Grid item xs={12}>
+                        <Field
+                          fullWidth
+                          required
+                          name="bookIsbn"
+                          component={TextField}
+                          type="text"
+                          label="ISBN"
                         />
-                    </Paper>
-                </Container>
-            )}
-        </Mutation>
-    );
-    
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Field
+                          fullWidth
+                          required
+                          name="bookTitle"
+                          component={TextField}
+                          type="text"
+                          label="Title"
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Field
+                          name="bookAuthor"
+                          fullWidth
+                          required
+                          component={TextField}
+                          type="text"
+                          label="Author"
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Field
+                          name="bookDescription"
+                          fullWidth
+                          required
+                          component={TextField}
+                          type="text"
+                          label="Description"
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Field
+                          name="bookPublisher"
+                          fullWidth
+                          required
+                          component={TextField}
+                          type="text"
+                          label="Publisher"
+                        />
+                      </Grid>
+                      <MuiPickersUtilsProvider utils={DateFnsUtils}>
+                        <Grid item xs={12}>
+                          <Field
+                            name="pubyear"
+                            component={DatePickerWrapper}
+                            fullWidth
+                            margin="normal"
+                            label="Publish Year"
+                          />
+                        </Grid>
+                      </MuiPickersUtilsProvider>
+                      <Grid item style={{ marginTop: 16 }}>
+                        <Button
+                          type="button"
+                          variant="contained"
+                          onClick={reset}
+                          disabled={submitting}
+                        >
+                          Reset
+                        </Button>
+                      </Grid>
+                      <Grid item style={{ marginTop: 16 }}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          type="submit"
+                          disabled={submitting}
+                        >
+                          Submit
+                        </Button>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </form>
+              )}
+            />
+          </Paper>
+        </Container>
+      )}
+    </Mutation>
+  );
 }
