@@ -29,7 +29,7 @@ var bookType = new GraphQLObjectType({
                 type: GraphQLString
             },
             published_year: {
-                type: GraphQLInt
+                type: GraphQLDate
             },
             publisher: {
                 type: GraphQLString
@@ -95,7 +95,7 @@ var mutation = new GraphQLObjectType({
                         type: new GraphQLNonNull(GraphQLString)
                     },
                     published_year: {
-                        type: new GraphQLNonNull(GraphQLInt)
+                        type: new GraphQLNonNull(GraphQLDate)
                     },
                     publisher: {
                         type: new GraphQLNonNull(GraphQLString)
@@ -130,7 +130,7 @@ var mutation = new GraphQLObjectType({
                         type: new GraphQLNonNull(GraphQLString)
                     },
                     published_year: {
-                        type: new GraphQLNonNull(GraphQLInt)
+                        type: new GraphQLNonNull(GraphQLDate)
                     },
                     publisher: {
                         type: new GraphQLNonNull(GraphQLString)

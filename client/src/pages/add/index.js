@@ -1,26 +1,24 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import gql from "graphql-tag";
-import { Mutation } from "react-apollo";
-// import { Link } from 'react-router-dom';
-import { makeStyles } from "@material-ui/core/styles";
-import Container from "@material-ui/core/Container";
-import AppBar from "@material-ui/core/AppBar";
+import { useMutation } from "@apollo/react-hooks";
 import Fab from "@material-ui/core/Fab";
 import KeyboardReturnIcon from "@material-ui/icons/KeyboardReturn";
-import { Form, Field } from "react-final-form";
-import { TextField } from "final-form-material-ui";
 
 import {
+  makeStyles,
+  Container,
+  AppBar,
   Paper,
   Link,
   Grid,
-  Button,  
+  TextField,
+  Button
 } from "@material-ui/core";
 // Picker
 import DateFnsUtils from "@date-io/date-fns";
 import {
-  MuiPickersUtilsProvider,  
-  DatePicker
+  MuiPickersUtilsProvider,
+  KeyboardDatePicker
 } from "@material-ui/pickers";
 
 const ADD_BOOK = gql`
@@ -30,7 +28,7 @@ const ADD_BOOK = gql`
     $author: String!
     $description: String!
     $publisher: String!
-    $published_year: Int!
+    $published_year: Date!
   ) {
     addBook(
       isbn: $isbn
@@ -44,48 +42,6 @@ const ADD_BOOK = gql`
     }
   }
 `;
-
-function DatePickerWrapper(props) {
-  const {
-    input: { name, onChange, value, ...restInput },
-    meta,
-    ...rest
-  } = props;
-  const showError =
-    ((meta.submitError && !meta.dirtySinceLastSubmit) || meta.error) &&
-    meta.touched;
-
-  return (
-    <DatePicker
-      {...rest}
-      name={name}
-      helperText={showError ? meta.error || meta.submitError : undefined}
-      error={showError}
-      inputProps={restInput}
-      onChange={onChange}
-      value={value === "" ? null : value}
-    />
-  );
-}
-
-const onSubmit = async values => {
-  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-  await sleep(300);
-  window.alert(JSON.stringify(values, 0, 2));
-};
-const validate = values => {
-  const errors = {};
-  if (!values.firstName) {
-    errors.firstName = "Required";
-  }
-  if (!values.lastName) {
-    errors.lastName = "Required";
-  }
-  if (!values.email) {
-    errors.email = "Required";
-  }
-  return errors;
-};
 
 const useStyles = makeStyles(theme => ({
   form: {
@@ -112,124 +68,144 @@ const useStyles = makeStyles(theme => ({
 export default function AddBook(props) {
   const classes = useStyles();
 
+  const [formData, setFormData] = useState({
+    isbn: "",
+    title: "",
+    author: "",
+    description: "",
+    publisher: "",
+    published_year: Date.now()
+  });
+
+  const [addBook, { loading, error }] = useMutation(ADD_BOOK);
+
+  const onReset = e => {
+    e.preventDefault();
+  };
+
+  const onSubmit = e => {
+    e.preventDefault();
+    console.log(formData);
+    addBook({
+      variables: {
+        isbn: formData.isbn,
+        title: formData.title,
+        author: formData.author,
+        description: formData.description,
+        publisher: formData.publisher,
+        published_year: formData.published_year
+      }
+    });
+  };
+
+  const onFormDataChange = (value, key) => {
+    setFormData({ ...formData, [key]: value });
+  };
+
+  if (loading) return <p>Loading...</p>;
+
+  if (error) return <p>Error(Please try again...)</p>;
+
   return (
-    <Mutation mutation={ADD_BOOK} onCompleted={() => props.history.push("/")}>
-      {(addBook, { loading, error }) => (
-        <Container maxWidth="lg" className={classes.container}>
-          <AppBar position="static">
-            <h3>ADD BOOK</h3>
-            <Link to="/">
-              <Fab
-                color="secondary"
-                aria-label="return"
-                className={classes.iconButton}
-              >
-                <KeyboardReturnIcon />
-              </Fab>
-            </Link>
-          </AppBar>
-          <Paper className={classes.paper}>
-            <Form
-              onSubmit={onSubmit}
-              initialValues={{ }}
-              validate={validate}
-              render={({
-                handleSubmit,
-                reset,
-                submitting                
-              }) => (
-                <form onSubmit={handleSubmit} noValidate>
-                  <Paper style={{ padding: 16 }}>
-                    <Grid container alignItems="flex-start" spacing={2}>
-                      <Grid item xs={12}>
-                        <Field
-                          fullWidth
-                          required
-                          name="bookIsbn"
-                          component={TextField}
-                          type="text"
-                          label="ISBN"
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Field
-                          fullWidth
-                          required
-                          name="bookTitle"
-                          component={TextField}
-                          type="text"
-                          label="Title"
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Field
-                          name="bookAuthor"
-                          fullWidth
-                          required
-                          component={TextField}
-                          type="text"
-                          label="Author"
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Field
-                          name="bookDescription"
-                          fullWidth
-                          required
-                          component={TextField}
-                          type="text"
-                          label="Description"
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Field
-                          name="bookPublisher"
-                          fullWidth
-                          required
-                          component={TextField}
-                          type="text"
-                          label="Publisher"
-                        />
-                      </Grid>
-                      <MuiPickersUtilsProvider utils={DateFnsUtils}>
-                        <Grid item xs={12}>
-                          <Field
-                            name="pubyear"
-                            component={DatePickerWrapper}
-                            fullWidth
-                            margin="normal"
-                            label="Publish Year"
-                          />
-                        </Grid>
-                      </MuiPickersUtilsProvider>
-                      <Grid item style={{ marginTop: 16 }}>
-                        <Button
-                          type="button"
-                          variant="contained"
-                          onClick={reset}
-                          disabled={submitting}
-                        >
-                          Reset
-                        </Button>
-                      </Grid>
-                      <Grid item style={{ marginTop: 16 }}>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          type="submit"
-                          disabled={submitting}
-                        >
-                          Submit
-                        </Button>
-                      </Grid>
-                    </Grid>
-                  </Paper>
-                </form>
-              )}
-            />
+    <Container maxWidth="lg" className={classes.container}>
+      <AppBar position="static">
+        <h3>ADD BOOK</h3>
+        <Link to="/">
+          <Fab
+            color="secondary"
+            aria-label="return"
+            className={classes.iconButton}
+          >
+            <KeyboardReturnIcon />
+          </Fab>
+        </Link>
+      </AppBar>
+      <Paper className={classes.paper}>
+        <form onSubmit={onSubmit} noValidate>
+          <Paper style={{ padding: 16 }}>
+            <Grid container alignItems="flex-start" spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  required
+                  value={formData.isbn}
+                  onChange={e => onFormDataChange(e.target.value, "isbn")}
+                  label="ISBN"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  required
+                  value={formData.title}
+                  onChange={e => onFormDataChange(e.target.value, "title")}
+                  label="Title"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  required
+                  value={formData.author}
+                  onChange={e => onFormDataChange(e.target.value, "author")}
+                  label="Author"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  required
+                  label="Description"
+                  value={formData.description}
+                  onChange={e =>
+                    onFormDataChange(e.target.value, "description")
+                  }
+                  multiline
+                  rows={3}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  required
+                  value={formData.publisher}
+                  onChange={e => onFormDataChange(e.target.value, "publisher")}
+                  label="Publisher"
+                />
+              </Grid>
+              <MuiPickersUtilsProvider utils={DateFnsUtils}>
+                <Grid item xs={12}>
+                  <KeyboardDatePicker
+                    disableToolbar
+                    variant="inline"
+                    format="MM/dd/yyyy"
+                    margin="normal"
+                    id="date-picker-inline"
+                    label="Date picker inline"
+                    value={formData.published_year}
+                    onChange={value =>
+                      onFormDataChange(value, "published_year")
+                    }
+                    KeyboardButtonProps={{
+                      "aria-label": "change date"
+                    }}
+                  />
+                </Grid>
+              </MuiPickersUtilsProvider>
+              <Grid item style={{ marginTop: 16 }}>
+                <Button type="button" variant="contained" onClick={onReset}>
+                  Reset
+                </Button>
+              </Grid>
+              <Grid item style={{ marginTop: 16 }}>
+                <Button variant="contained" color="primary" type="submit">
+                  Submit
+                </Button>
+              </Grid>
+            </Grid>
           </Paper>
-        </Container>
-      )}
-    </Mutation>
+        </form>
+      </Paper>
+    </Container>
   );
 }
